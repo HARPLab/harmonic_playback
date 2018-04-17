@@ -1,0 +1,8 @@
+<library path="lib/libjoystick_panel">
+    <class type="ada_adjustable_playback::JoystickDisplayPanel"
+         base_class_type="rviz::Panel">
+      <description>
+        A panel to display joystick input data.
+      </description>
+    </class>
+</library>

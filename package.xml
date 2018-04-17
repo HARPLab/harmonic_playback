@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>ada_adjustable_playback</name>
+  <version>0.1.0</version>
+  <description>The ada_adjustable_playback package</description>
+
+  <maintainer email="reubena@andrew.cmu.edu">Reuben Aronson</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  
+  <depend>boost</depend>
+  <depend>sensor_msgs</depend>
+  <depend>rviz</depend>
+  <depend>roscpp</depend>
+  <depend>libogre-dev</depend>
+  <depend>libqt4-dev</depend>
+  
+  <export>
+    <rviz plugin="${prefix}/plugins.xml"/>
+  </export>
+</package>
