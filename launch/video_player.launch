@@ -24,6 +24,7 @@
         <param name="video_stream_provider" value="$(arg data_directory)/processed/eye0_d.mp4" />
         <param name="ts_file" value="$(arg data_directory)/processed/eye0_timestamps_d.npy" />
         <param name="queue_size" value="10" />
+        <param name="flip_vertical" value="true" />
     </node>
 
     <node name="eye_video1" pkg="ada_adjustable_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video1)">

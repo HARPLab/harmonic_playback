@@ -29,9 +29,10 @@ from hgext.zeroconf import publish
 #     return cam_info
 
 class ImageQueue:
-    def __init__(self, cap, ts, queue_size=1):
+    def __init__(self, cap, ts, queue_size=1, flip_code=None):
         self.cap = cap
         self.ts = ts
+        self.flip_code = flip_code
         self._queue = Queue.LifoQueue(maxsize=queue_size)
         self._thread = threading.Thread(target=self.run)
         self._thread.start()
@@ -40,6 +41,8 @@ class ImageQueue:
     def run(self):
         for t in self.ts:
             ok, img = self.cap.read()
+            if self.flip_code is not None:
+                img = cv2.flip(img, self.flip_code)
             if ok:
                 item = (t, img)
                 placed = False
@@ -67,9 +70,20 @@ def publish_image():
     provider = rospy.get_param('~video_stream_provider')
     cap = cv2.VideoCapture(provider)
     
+    flip_horz = rospy.get_param('~flip_horizontal', default=False)
+    flip_vert = rospy.get_param('~flip_vertical', default=False)
+    if flip_horz and flip_vert:
+        flip_code = -1
+    elif flip_horz:
+        flip_code = 1
+    elif flip_vert:
+        flip_code = 0
+    else:
+        flip_code = None
+    
     queue_size = rospy.get_param('~queue_size', default=10)
     ts = np.load(rospy.get_param('~ts_file'))
-    queue = ImageQueue(cap, ts, queue_size)
+    queue = ImageQueue(cap, ts, queue_size, flip_code)
     
     topic = rospy.get_param('~camera_name')
     pub = rospy.Publisher(topic, sensor_msgs.msg.Image, queue_size=1)
@@ -78,21 +92,20 @@ def publish_image():
         
     while not rospy.is_shutdown() and not queue.is_finished:
         try:
-            rospy.loginfo("Waiting for next frame")
             t, img_raw = queue.get(block=True, timeout=1.)
             tm = rospy.Time.from_sec(t)
             cur_tm = rospy.get_rostime()
             if tm < cur_tm:
-                rospy.loginfo("Video frame time has passed already (offset={}), discarding".format( (cur_tm - tm).to_sec()))
+#                 rospy.loginfo("Video frame time has passed already (offset={}), discarding".format( (cur_tm - tm).to_sec()))
                 continue
-            rospy.loginfo("got frame for time: {}".format(tm))
+#             rospy.loginfo("got frame for time: {}".format(tm))
             
             img = bridge.cv2_to_imgmsg(img_raw, encoding="bgr8")
             img.header.stamp = tm
             
             while cur_tm < tm:
                 sleep_len = min(tm - cur_tm, rospy.Duration(1))
-                rospy.loginfo("Waiting {} to publish frame (total: {})".format(sleep_len.to_sec(), (tm - cur_tm).to_sec()))
+#                 rospy.loginfo("Waiting {} to publish frame (total: {})".format(sleep_len.to_sec(), (tm - cur_tm).to_sec()))
                 try:
                     rospy.sleep(sleep_len)
                 except rospy.exceptions.ROSTimeMovedBackwardsException:
