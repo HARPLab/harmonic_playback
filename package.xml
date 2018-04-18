@@ -17,6 +17,9 @@
   <depend>libogre-dev</depend>
   <depend>libqt4-dev</depend>
   
+  <exec_depend>video_stream_opencv</exec_depend>
+  <exec_depend>image_view</exec_depend>
+  
   <export>
     <rviz plugin="${prefix}/plugins.xml"/>
   </export>

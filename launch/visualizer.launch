@@ -1,0 +1,15 @@
+<launch>
+
+  <param name="use_sim_time" value="true" />
+  
+  <arg name="data_directory" />
+  
+  <include file="$(find ada_adjustable_playback)/launch/video_player.launch" >
+    <arg name="data_directory" value="$(arg data_directory)" />
+  </include>
+  
+  <include file="$(find ada_adjustable_playback)/launch/robot_state.launch" />
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ada_adjustable_playback)/config/ada_adj_playback.rviz" />
+
+</launch>

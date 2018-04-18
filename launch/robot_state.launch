@@ -1,6 +1,8 @@
 <launch>
+
   <param name="robot_description" textfile="$(find ada_adjustable_playback)/data/mico.urdf" />
-  <param name="tf_prefix" value="mico" />
+  <param name="tf_prefix" value="" />
 
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="mico_pub" />
+
 </launch>

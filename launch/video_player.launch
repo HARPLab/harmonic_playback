@@ -1,0 +1,36 @@
+<launch>
+  <arg name="data_directory" />
+  <arg name="enable_ego_video" default="true" />
+  <arg name="enable_eye_video0" default="true" />
+  <arg name="enable_eye_video1" default="true" />
+  <arg name="enable_zed_left" default="true" />
+  <arg name="enable_zed_right" default="true" />
+  
+  <arg name="ego_video_topic" default="ego_video" />
+  <arg name="eye_video0_topic" default="eye0" />
+  <arg name="eye_video1_topic" default="eye1" />
+  <arg name="zed_left_topic" default="zed_left" />
+  <arg name="zed_right_topic" default="zed_right" />
+  
+    <node name="ego_video" pkg="ada_adjustable_playback" type="time_synch_video_player.py" output="screen" if="$(arg enable_ego_video)">
+        <param name="camera_name" value="$(arg ego_video_topic)" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/world_d.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/world_timestamps_d.npy" />
+        <param name="queue_size" value="10" />
+    </node>
+
+    <node name="eye_video0" pkg="ada_adjustable_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video0)">
+        <param name="camera_name" value="$(arg eye_video0_topic)" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/eye0_d.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/eye0_timestamps_d.npy" />
+        <param name="queue_size" value="10" />
+    </node>
+
+    <node name="eye_video1" pkg="ada_adjustable_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video1)">
+        <param name="camera_name" value="$(arg eye_video1_topic)" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/eye1_d.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/eye1_timestamps_d.npy" />
+        <param name="queue_size" value="10" />
+    </node>
+  
+</launch>
