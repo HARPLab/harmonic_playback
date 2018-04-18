@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<KinBody>
+	<Body type="dynamic">
+		<Geom type="sphere">
+			<Translation>0  0  0</Translation>
+			<diffuseColor>0 0.5 0</diffuseColor>
+			<transparency> .3 </transparency>
+			<radius>0.07</radius>
+		</Geom>
+	</Body>
+</KinBody>

@@ -1,0 +1,20 @@
+<robot name="ADA">
+    <group name="Mico">
+        <chain base_link="mico_link_base" tip_link="mico_link_hand"/>
+    </group>
+
+    <group name="hand">
+        <link name="mico_link_finger_1"/>
+        <link name="mico_link_finger_tip_1"/>
+        <link name="mico_link_finger_2"/>
+        <link name="mico_link_finger_tip_2"/>
+    </group>
+
+    <end_effector name="Mico" group="hand" parent_link="mico_end_effector"
+                  parent_group="Mico"/>
+
+    <disable_collisions link1="mico_link_finger_1" link2="mico_link_finger_2"/>
+    <disable_collisions link1="mico_link_finger_1" link2="mico_link_finger_tip_2"/>
+    <disable_collisions link1="mico_link_finger_tip_1" link2="mico_link_finger_2"/>
+    <disable_collisions link1="mico_link_finger_tip_1" link2="mico_link_finger_tip_2"/>
+</robot>
