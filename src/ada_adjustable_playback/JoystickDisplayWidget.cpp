@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <QPainter>
+#include <QPen>
 
 namespace ada_adjustable_playback {
 
@@ -65,6 +66,9 @@ void JoystickWidget::paintEvent(QPaintEvent * parent) {
 		  // draw a line to the joystick point
 		  int const pt_x = h_orig - this->axis_x * axis_size/2;
 		  int const pt_y = v_orig - this->axis_y * axis_size/2;
+		  QPen cur_pen(painter.pen());
+		  cur_pen.setWidth(3);
+		  painter.setPen(cur_pen);
 		  painter.drawLine( h_orig,v_orig, pt_x, pt_y);
 		  painter.setBrush( crosshair );
 		  painter.drawEllipse( pt_x-3, pt_y-3, 6, 6);
