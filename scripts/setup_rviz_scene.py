@@ -85,7 +85,7 @@ def setup(sim=False, viewer=None, debug=True):
     with env:
         or_urdf = openravepy.RaveCreateModule(env, 'urdf')
         ada_name = or_urdf.SendCommand(
-            'load {:s} {:s}'.format(URDF_PATH, SRDF_PATH))
+            'LoadURI {:s} {:s}'.format(URDF_PATH, SRDF_PATH))
         
     env.SetViewer('InteractiveMarker')
         
