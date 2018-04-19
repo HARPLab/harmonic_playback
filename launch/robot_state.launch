@@ -4,5 +4,8 @@
   <param name="tf_prefix" value="" />
 
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="mico_pub" />
+  
+  <param name="env_description" textfile="$(find ada_adjustable_playback)/data/environments/table.urdf" />
+  <node pkg="tf" type="static_transform_publisher" name="table_broadcaster" args="8.75423792e-01 6.32824451e-02 0.0 1 0 0 90 world table 100" />
 
 </launch>
