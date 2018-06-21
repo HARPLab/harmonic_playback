@@ -1,7 +1,10 @@
 <launch>
 
+  <arg name="morsel_file" default="" />
   <env name="OPENRAVE_DATA" value="$(env OPENRAVE_DATA)$(find ada_adjustable_playback)/data" />
   
-  <node pkg="ada_adjustable_playback" name="openrave_setup" type="setup_rviz_scene.py" output="screen" />
+  <node pkg="ada_adjustable_playback" name="openrave_setup" type="setup_rviz_scene.py" output="screen">
+    <param name="morsel_file" value="$(arg morsel_file)" />
+  </node>
 
 </launch>

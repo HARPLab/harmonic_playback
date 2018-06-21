@@ -5,6 +5,7 @@ import openravepy
 import os
 import numpy
 import logging
+import yaml
 
 project_name = 'ada_adjustable_playback'
 logger = logging.getLogger(project_name)
@@ -191,20 +192,48 @@ def setup(sim=False, viewer=None, debug=True):
     robot.Grab(fork, grablink=grab_link, linkstoignore=finger_link_inds)
  #   robot.Grab(tool_box, grablink=grab_link, linkstoignore=finger_link_inds)
   #  robot.Grab(fork_box, grablink=grab_link, linkstoignore=finger_link_inds)
-    return robot
-    
+    return robot, env
+
+def setup_morsels(env, morsel_file):
+    with open(morsel_file, 'rb') as f:
+        morsels = yaml.load(f)
   
+    
+    object_base_path = find_in_workspaces(
+        search_dirs=['share'],
+        project=project_name,
+        path='data',
+        first_match_only=True)[0]
+    ball_path = os.path.join(object_base_path, 'objects', 'smallsphere.kinbody.xml')
+    delta_path = os.path.join(object_base_path, 'objects', 'mediumsphere.kinbody.xml')
+
+    for name, val in morsels.items():
+        with env:
+            morsel = env.ReadKinBodyURI(ball_path)
+            delta = env.ReadKinBodyURI(delta_path)
+            morsel.SetName(name)
+            delta.SetName(name + '_delta')
+            env.Add(morsel)
+            env.Add(delta)
+            morsel.Enable(False)
+            delta.Enable(False)
+    
+        morsel.SetTransform(val)
+        delta.SetTransform(val)
+        
 if __name__ == "__main__":
     import rospy
     rospy.init_node('setup', anonymous=True)
     # Wait for bag file to be set up
     if rospy.get_param('use_sim_time', default=False):
         import time
-        while (rospy.get_time() <= 1.):
-            time.sleep(1.)
+        while (rospy.get_time() <= 0.01):
+            time.sleep(0.1)
     
     
-    robot = setup()
+    robot, env = setup()
+    if rospy.has_param('~morsel_file') and rospy.get_param('~morsel_file') != '':
+        setup_morsels(env, rospy.get_param('~morsel_file'))
     joint_client = JointStateClient(robot, 'joint_states')
     
     rospy.spin()
