@@ -14,23 +14,30 @@
   
     <node name="ego_video" pkg="ada_adjustable_playback" type="time_synch_video_player.py" output="screen" if="$(arg enable_ego_video)">
         <param name="camera_name" value="$(arg ego_video_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/world_d.mp4" />
-        <param name="ts_file" value="$(arg data_directory)/processed/world_timestamps_d.npy" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/world.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/playback/world_timestamps.npy" />
         <param name="queue_size" value="10" />
     </node>
 
     <node name="eye_video0" pkg="ada_adjustable_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video0)">
         <param name="camera_name" value="$(arg eye_video0_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/eye0_d.mp4" />
-        <param name="ts_file" value="$(arg data_directory)/processed/eye0_timestamps_d.npy" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/eye0.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/playback/eye0_timestamps.npy" />
         <param name="queue_size" value="10" />
         <param name="flip_vertical" value="true" />
     </node>
 
     <node name="eye_video1" pkg="ada_adjustable_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video1)">
         <param name="camera_name" value="$(arg eye_video1_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/eye1_d.mp4" />
-        <param name="ts_file" value="$(arg data_directory)/processed/eye1_timestamps_d.npy" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/eye1.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/playback/eye1_timestamps.npy" />
+        <param name="queue_size" value="10" />
+    </node>
+
+    <node name="zed_left" pkg="ada_adjustable_playback" type="time_synch_video_player.py" if="$(arg enable_zed_left)">
+        <param name="camera_name" value="$(arg zed_left_topic)" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/zed_left.mp4" />
+        <param name="ts_file" value="$(arg data_directory)/processed/playback/zed_timestamps.npy" />
         <param name="queue_size" value="10" />
     </node>
   

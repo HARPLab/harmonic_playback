@@ -16,6 +16,6 @@
    
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ada_adjustable_playback)/config/ada_adj_playback.rviz" />
 
-  <node if="$(arg autoplay)" name="rosbag_playback" pkg="rosbag" type="play" args="$(arg data_directory)/processed/viz_data.bag --clock --pause" output="screen" />
+  <node if="$(arg autoplay)" name="rosbag_playback" pkg="rosbag" type="play" args="$(arg data_directory)/processed/playback/viz_data.bag --clock --pause" output="screen" />
 
 </launch>
