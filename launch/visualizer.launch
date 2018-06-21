@@ -3,6 +3,7 @@
   <param name="use_sim_time" value="true" />
    
   <arg name="data_directory" />
+  <arg name="autoplay" default="true" />
  
   <include file="$(find ada_adjustable_playback)/launch/video_player.launch" >
     <arg name="data_directory" value="$(arg data_directory)" />
@@ -14,5 +15,7 @@
   </include>
    
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ada_adjustable_playback)/config/ada_adj_playback.rviz" />
+
+  <node if="$(arg autoplay)" name="rosbag_playback" pkg="rosbag" type="play" args="$(arg data_directory)/processed/viz_data.bag --clock --pause" output="screen" />
 
 </launch>

@@ -62,7 +62,7 @@ def rodrigues(r):
 #    return mat(R)
     return R
 
-def setup(sim=False, viewer=None, debug=True):
+def setup(sim=False, viewer=None, debug=False):
 
     data_base_path = find_in_workspaces(
         search_dirs=['share'],
@@ -275,10 +275,10 @@ if __name__ == "__main__":
     import rospy
     rospy.init_node('setup', anonymous=True)
     # Wait for bag file to be set up
-    if rospy.get_param('use_sim_time', default=False):
-        import time
-        while (rospy.get_time() <= 0.01):
-            time.sleep(0.1)
+#     if rospy.get_param('use_sim_time', default=False):
+#         import time
+#         while (rospy.get_time() <= 0.01):
+#             time.sleep(0.1)
     
     
     robot, env = setup()
