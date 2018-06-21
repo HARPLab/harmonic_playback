@@ -4,16 +4,15 @@
 #ifndef Q_MOC_RUN
 
 #include <ros/ros.h>
-#include <rviz/panel.h>
 
 #include "sensor_msgs/Joy.h"
 
-#include "ada_adjustable_playback/JoystickDisplayWidget.hpp"
-
 #endif // Q_MOC_RUN
 
-
 #include <QLineEdit>
+#include <rviz/panel.h>
+
+#include "ada_adjustable_playback/JoystickDisplayWidget.hpp"
 
 namespace ada_adjustable_playback {
 

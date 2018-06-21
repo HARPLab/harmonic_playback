@@ -11,8 +11,19 @@ catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 
-find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
-include(${QT_USE_FILE})
+# find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
+# include(${QT_USE_FILE})
+
+find_package(Qt5Core REQUIRED)
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Widgets REQUIRED)
+add_definitions(-DQT_NO_KEYWORDS)
+#include(${QT_USE_FILE})
+include_directories(
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Gui_INCLUDE_DIRS}
+    ${Qt5Widgets_INCLUDE_DIRS}
+)
 
 add_definitions(-DQT_NO_KEYWORDS)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
@@ -48,7 +59,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-qt4_wrap_cpp(MOC_FILES
+qt5_wrap_cpp(MOC_FILES
   include/ada_adjustable_playback/JoystickDisplayPanel.hpp
   include/ada_adjustable_playback/JoystickDisplayWidget.hpp
   src/ada_adjustable_playback/JoystickDisplayPanel.cpp
