@@ -6,6 +6,10 @@ import os
 import numpy
 import logging
 import yaml
+from ada_adjustable_playback.msg import ProbabilityUpdate
+from visualization_msgs.msg import Marker, MarkerArray
+import numpy as np
+from matplotlib import cm
 
 project_name = 'ada_adjustable_playback'
 logger = logging.getLogger(project_name)
@@ -194,32 +198,78 @@ def setup(sim=False, viewer=None, debug=True):
   #  robot.Grab(fork_box, grablink=grab_link, linkstoignore=finger_link_inds)
     return robot, env
 
-def setup_morsels(env, morsel_file):
-    with open(morsel_file, 'rb') as f:
-        morsels = yaml.load(f)
-  
+class MorselDisplay:
+    def __init__(self, env, morsel_file, morsel_topic):
+        with open(morsel_file, 'rb') as f:
+            morsels = yaml.load(f)
+        
+        self.morsels = {}      
+        
+        object_base_path = find_in_workspaces(
+            search_dirs=['share'],
+            project=project_name,
+            path='data',
+            first_match_only=True)[0]
+        ball_path = os.path.join(object_base_path, 'objects', 'smallsphere.kinbody.xml')
+        delta_path = os.path.join(object_base_path, 'objects', 'mediumsphere.kinbody.xml')
     
-    object_base_path = find_in_workspaces(
-        search_dirs=['share'],
-        project=project_name,
-        path='data',
-        first_match_only=True)[0]
-    ball_path = os.path.join(object_base_path, 'objects', 'smallsphere.kinbody.xml')
-    delta_path = os.path.join(object_base_path, 'objects', 'mediumsphere.kinbody.xml')
+        for name, val in morsels.items():
+            with env:
+                morsel = env.ReadKinBodyURI(ball_path)
+                delta = env.ReadKinBodyURI(delta_path)
+                morsel.SetName(name)
+                delta.SetName(name + '_delta')
+                env.Add(morsel)
+                env.Add(delta)
+                morsel.Enable(False)
+                delta.Enable(False)
+        
+            morsel.SetTransform(val)
+            delta.SetTransform(val)
+            self.morsels[name] = {'morsel': morsel, 'delta': delta}
+    
+        self.sub = rospy.Subscriber(morsel_topic, ProbabilityUpdate, self._callback)
+        self.marker_publisher = rospy.Publisher("visualization_marker_array", MarkerArray, queue_size=50)
+        
+    def _callback(self, msg):
+        marker_msg = MarkerArray()
+        for ind, (name, prob) in enumerate(zip(msg.names, msg.probabilities)):
+            try:
+                delta = self.morsels[name]['delta']
+                position = delta.GetTransform()[0:3,3]
+                marker = Marker()
+                marker.header.frame_id = "map"
+                marker.header.stamp = msg.header.stamp
+                marker.type = Marker.TEXT_VIEW_FACING
+                marker.id = ind
+                marker.ns = 'probabilities'
+                marker.lifetime.secs = 1
+            
+                marker.pose.position.x = position[0]
+                marker.pose.position.y = position[1]
+                marker.pose.position.z = position[2] + 0.1
+                marker.pose.orientation.x = 0.
+                marker.pose.orientation.y = 0.
+                marker.pose.orientation.z = 0.
+                marker.pose.orientation.w = 1.
+            
+                marker.text = str(np.ceil(prob*100.)/100.)
+                marker.scale.x = 0.09
+                marker.scale.y = 0.09
+                marker.scale.z = 0.09
+            
+                color_jet = cm.jet(prob)
+                marker.color.r = color_jet[0]
+                marker.color.g = color_jet[1]
+                marker.color.b = color_jet[2]
+                marker.color.a = color_jet[3]
+                
+                delta.GetLinks()[0].GetGeometries()[0].SetDiffuseColor(color_jet)
 
-    for name, val in morsels.items():
-        with env:
-            morsel = env.ReadKinBodyURI(ball_path)
-            delta = env.ReadKinBodyURI(delta_path)
-            morsel.SetName(name)
-            delta.SetName(name + '_delta')
-            env.Add(morsel)
-            env.Add(delta)
-            morsel.Enable(False)
-            delta.Enable(False)
-    
-        morsel.SetTransform(val)
-        delta.SetTransform(val)
+                marker_msg.markers.append(marker)
+            except KeyError:
+                rospy.logwarn('Got probability update for unknown morsel {}'.format(name))
+        self.marker_publisher.publish(marker_msg)
         
 if __name__ == "__main__":
     import rospy
@@ -233,8 +283,8 @@ if __name__ == "__main__":
     
     robot, env = setup()
     if rospy.has_param('~morsel_file') and rospy.get_param('~morsel_file') != '':
-        setup_morsels(env, rospy.get_param('~morsel_file'))
-    joint_client = JointStateClient(robot, 'joint_states')
+        morsel_display = MorselDisplay(env, rospy.get_param('~morsel_file'), rospy.get_param('~morsel_topic'))
+    joint_client = JointStateClient(robot, rospy.get_param('~joint_state_topic'))
     
     rospy.spin()
     

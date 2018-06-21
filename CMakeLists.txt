@@ -5,9 +5,10 @@ project(ada_adjustable_playback)
 find_package(catkin REQUIRED COMPONENTS
     roscpp
     rviz
-    sensor_msgs)
+    std_msgs
+    sensor_msgs
+    message_generation)
     
-catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
 
@@ -32,8 +33,13 @@ set(CMAKE_MACOSX_RPATH ON)
 
 #catkin_python_setup()
 
+add_message_files(
+  FILES
+  ProbabilityUpdate.msg
+)
 ## Generate added messages and services with any dependencies listed here
-#generate_messages()
+generate_messages(
+    DEPENDENCIES std_msgs)
 
 ###################################
 ## catkin specific configuration ##
@@ -45,7 +51,7 @@ set(CMAKE_MACOSX_RPATH ON)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS message_runtime
 )
 
 ###########

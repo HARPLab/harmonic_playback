@@ -5,6 +5,8 @@
   
   <node pkg="ada_adjustable_playback" name="openrave_setup" type="setup_rviz_scene.py" output="screen">
     <param name="morsel_file" value="$(arg morsel_file)" />
+    <param name="morsel_topic" value="/probabilities" />
+    <param name="joint_state_topic" value="/joint_states" />
   </node>
 
 </launch>
