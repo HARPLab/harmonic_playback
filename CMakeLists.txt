@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ada_adjustable_playback)
+project(harmonic_playback)
 
 
 find_package(catkin REQUIRED COMPONENTS

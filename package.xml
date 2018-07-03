@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>ada_adjustable_playback</name>
+  <name>harmonic_playback</name>
   <version>0.1.0</version>
-  <description>The ada_adjustable_playback package</description>
+  <description>Package for visualizin data from the HARMONIC dataset, http://harp.ri.cmu.edu/harmonic</description>
 
   <maintainer email="reubena@andrew.cmu.edu">Reuben Aronson</maintainer>
 
@@ -15,6 +15,7 @@
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>visualization_msgs</depend>
+  <depend>ros_myo</depend>
   <depend>rviz</depend>
   <depend>roscpp</depend>
   <depend>libogre-dev</depend>
