@@ -119,14 +119,18 @@ def publish_image():
     queue = ImageQueue(cap, ts, queue_size, flip_code)
     
     topic = rospy.get_param('~camera_name')
-    pub = rospy.Publisher(topic, sensor_msgs.msg.Image, queue_size=1)
+    pub = rospy.Publisher(topic + '/image_raw', sensor_msgs.msg.Image, queue_size=1)
     
     bridge = cv_bridge.CvBridge()
     
     use_manual_sim = rospy.get_param('~use_manual_sim', default=False)
+    offset_from_start = rospy.get_param('~offset_from_start', default=False)
     if use_manual_sim:
         sim_clock = SimClockDelay()
         get_time = sim_clock.get_time
+    elif offset_from_start:
+        time_offset = rospy.Time.from_sec(ts[0]) - rospy.get_rostime()
+        get_time = lambda: rospy.get_rostime() + time_offset
     else:
         get_time = rospy.get_rostime
         
@@ -142,6 +146,7 @@ def publish_image():
             
             img = bridge.cv2_to_imgmsg(img_raw, encoding="bgr8")
             img.header.stamp = tm
+            img.header.frame_id = topic
             
             if use_manual_sim:
                 done = False
