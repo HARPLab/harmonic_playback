@@ -6,16 +6,16 @@ import os
 import numpy
 import logging
 import yaml
-from ada_adjustable_playback.msg import ProbabilityUpdate
+from harmonic_playback.msg import ProbabilityUpdate
 from visualization_msgs.msg import Marker, MarkerArray
 import numpy as np
 from matplotlib import cm
 
-project_name = 'ada_adjustable_playback'
+project_name = 'harmonic_playback'
 logger = logging.getLogger(project_name)
 
-URDF_PATH = 'package://ada_adjustable_playback/data/mico.urdf'
-SRDF_PATH = 'package://ada_adjustable_playback/data/mico.srdf'
+URDF_PATH = 'package://harmonic_playback/data/mico.urdf'
+SRDF_PATH = 'package://harmonic_playback/data/mico.srdf'
 
 class JointStateClient(object):
     def __init__(self, robot, topic_name):

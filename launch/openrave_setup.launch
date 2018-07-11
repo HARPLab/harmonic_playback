@@ -1,9 +1,9 @@
 <launch>
 
   <arg name="morsel_file" default="" />
-  <env name="OPENRAVE_DATA" value="$(env OPENRAVE_DATA)$(find ada_adjustable_playback)/data" />
+  <env name="OPENRAVE_DATA" value="$(env OPENRAVE_DATA)$(find harmonic_playback)/data" />
   
-  <node pkg="ada_adjustable_playback" name="openrave_setup" type="setup_rviz_scene.py" output="screen">
+  <node pkg="harmonic_playback" name="openrave_setup" type="setup_rviz_scene.py" output="screen">
     <param name="morsel_file" value="$(arg morsel_file)" />
     <param name="morsel_topic" value="/probabilities" />
     <param name="joint_state_topic" value="/joint_states" />

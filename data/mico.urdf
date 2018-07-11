@@ -29,7 +29,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_base.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_base.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -37,7 +37,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_base.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_base.dae"/>
       </geometry>
     </collision>
   </link>
@@ -69,7 +69,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_1.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -77,7 +77,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_1.dae"/>
       </geometry>
     </collision>
   </link>
@@ -109,7 +109,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_2.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_2.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -117,7 +117,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_2.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_2.dae"/>
       </geometry>
     </collision>
   </link>
@@ -148,7 +148,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_3.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_3.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -156,7 +156,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_3.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_3.dae"/>
       </geometry>
     </collision>
   </link>
@@ -187,7 +187,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_4.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_4.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -195,7 +195,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_4.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_4.dae"/>
       </geometry>
     </collision>
   </link>
@@ -226,7 +226,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_4.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_4.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -234,7 +234,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_4.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/mico_link_4.dae"/>
       </geometry>
     </collision>
   </link>
@@ -265,8 +265,8 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_hand.dae"/>
-        <!-- <mesh filename="package://ada_adjustable_playback/meshes/Hand_Link_camera.STL"/>  -->
+        <mesh filename="package://harmonic_playback/meshes/mico_link_hand.dae"/>
+        <!-- <mesh filename="package://harmonic_playback/meshes/Hand_Link_camera.STL"/>  -->
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -274,8 +274,8 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/mico_link_hand.dae"/>
-        <!-- <mesh filename="package://ada_adjustable_playback/meshes/Hand_Link_camera.STL"/>  -->
+        <mesh filename="package://harmonic_playback/meshes/mico_link_hand.dae"/>
+        <!-- <mesh filename="package://harmonic_playback/meshes/Hand_Link_camera.STL"/>  -->
       </geometry>
     </collision>
   </link>
@@ -352,9 +352,9 @@
     </inertial>
     <visual>
       <geometry>
-        <!--<mesh filename="package://ada_adjustable_playback/meshes/StructureIO.stl"/>-->
-        <mesh filename="package://ada_adjustable_playback/meshes/structureio.dae"/>
-        <!-- <mesh filename="package://ada_adjustable_playback/meshes/Hand_Link_camera.STL"/>  -->
+        <!--<mesh filename="package://harmonic_playback/meshes/StructureIO.stl"/>-->
+        <mesh filename="package://harmonic_playback/meshes/structureio.dae"/>
+        <!-- <mesh filename="package://harmonic_playback/meshes/Hand_Link_camera.STL"/>  -->
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -362,8 +362,8 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/StructureIO.stl"/>
-        <!-- <mesh filename="package://ada_adjustable_playback/meshes/Hand_Link_camera.STL"/>  -->
+        <mesh filename="package://harmonic_playback/meshes/StructureIO.stl"/>
+        <!-- <mesh filename="package://harmonic_playback/meshes/Hand_Link_camera.STL"/>  -->
       </geometry>
     </collision>
   </link>
@@ -385,7 +385,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_proximal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_proximal_limb_1.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -393,7 +393,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_proximal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_proximal_limb_1.dae"/>
       </geometry>
     </collision>
   </link>
@@ -423,7 +423,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_distal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_distal_limb_1.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -431,7 +431,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_distal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_distal_limb_1.dae"/>
       </geometry>
     </collision>
   </link>
@@ -469,7 +469,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_proximal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_proximal_limb_1.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -477,7 +477,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_proximal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_proximal_limb_1.dae"/>
       </geometry>
     </collision>
   </link>
@@ -507,7 +507,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_distal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_distal_limb_1.dae"/>
       </geometry>
       <material name="carbon_fiber">
         <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1"/>
@@ -515,7 +515,7 @@
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://ada_adjustable_playback/meshes/finger_distal_limb_1.dae"/>
+        <mesh filename="package://harmonic_playback/meshes/finger_distal_limb_1.dae"/>
       </geometry>
     </collision>
   </link>

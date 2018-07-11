@@ -2,19 +2,19 @@
 
   <param name="use_sim_time" value="true" />
    
-  <arg name="data_directory" />
+  <arg name="data_directory" default="$(find harmonic_playback)/data/p122_011" />
   <arg name="autoplay" default="true" />
  
-  <include file="$(find ada_adjustable_playback)/launch/video_player.launch" >
+  <include file="$(find harmonic_playback)/launch/video_player.launch" >
     <arg name="data_directory" value="$(arg data_directory)" />
   </include>
   
  
-  <include file="$(find ada_adjustable_playback)/launch/openrave_setup.launch">
+  <include file="$(find harmonic_playback)/launch/openrave_setup.launch">
     <arg name="morsel_file" value="$(arg data_directory)/text_data/morsel.yaml" />
   </include>
    
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ada_adjustable_playback)/config/ada_adj_playback.rviz" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find harmonic_playback)/config/ada_adj_playback.rviz" />
 
   <node if="$(arg autoplay)" name="rosbag_playback" pkg="rosbag" type="play" args="$(arg data_directory)/processed/playback/viz_data.bag --clock --pause" output="screen" />
 
