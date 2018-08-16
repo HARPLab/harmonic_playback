@@ -1,6 +1,8 @@
 <launch>
 
   <param name="use_sim_time" value="true" />
+  
+  <node pkg="tf2_ros" type="static_transform_publisher" name="robot_base_broadcaster" args="0.409 0.338 0.795 0. 0. 0. 1. map robot_base" />
    
   <arg name="data_directory" default="$(find harmonic_playback)/data/p122_011" />
   <arg name="autoplay" default="true" />
