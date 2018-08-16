@@ -10,10 +10,14 @@ import progressbar
 
 import rosbag
 import rospy
-import sensor_msgs.msg
-import ros_myo.msg
+
+import geometry_msgs.msg
 import harmonic_playback.msg
-    
+import ros_myo.msg
+import sensor_msgs.msg
+import std_msgs.msg
+import visualization_msgs.msg
+
 class SubDirs:
     GAZE_DIR = 'gaze'
     RAW_DIR = 'raw_data'
@@ -60,7 +64,7 @@ class CsvDataGenerator:
 class JoystickDataGenerator(CsvDataGenerator):
     topic = '/joystick'
     def __init__(self, base_dir):
-        filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'ada-joy.csv')
+        filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'ada_joy.csv')
         CsvDataGenerator.__init__(self, filename)
     
     def build_message(self, vals):
@@ -78,7 +82,7 @@ class JointInfoGenerator(CsvDataGenerator):
                     'mico_joint_5', 'mico_joint_6', 'mico_joint_finger_1',
                     'mico_joint_finger_2']
     def __init__(self, base_dir):
-        filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'joint_states.csv')
+        filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'joint_positions.csv')
         CsvDataGenerator.__init__(self, filename)
         
     def build_message(self, vals):
@@ -95,6 +99,38 @@ class JointInfoGenerator(CsvDataGenerator):
             )
         msg.header.stamp = t
         return t, MessageContainer(msg)
+    
+class RobotSkeletonGenerator(CsvDataGenerator):
+    topic = '/visualization_marker'
+    
+    _POSITION_NAMES = ['mico_link_base', 'mico_link_1', 'mico_link_2', 'mico_link_3', 
+                    'mico_link_4', 'mico_link_5', 'mico_link_hand',
+                    'mico_end_effector', 'mico_fork_tip']
+    
+    def __init__(self, base_dir):
+        filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'robot_position.csv')
+        CsvDataGenerator.__init__(self, filename)
+        
+    def build_message(self, vals):
+        t = rospy.Time.from_sec(float(vals['timestamp']))
+        
+        msg = visualization_msgs.msg.Marker(
+            id = 100,
+            ns = 'robot_skeleton',
+            type = visualization_msgs.msg.Marker.LINE_STRIP,
+            action = visualization_msgs.msg.Marker.MODIFY,
+            pose = geometry_msgs.msg.Pose(
+                    position = geometry_msgs.msg.Point(0., 0., 0.),
+                    orientation = geometry_msgs.msg.Quaternion(0., 0., 0., 1.)
+                ),
+            scale = geometry_msgs.msg.Vector3(0.01, 0., 0.),
+            points = [ geometry_msgs.msg.Point(float(vals[j + '_x']), float(vals[j + '_y']), float(vals[j + '_z'])) for j in RobotSkeletonGenerator._POSITION_NAMES ],
+            color = std_msgs.msg.ColorRGBA(r=0, g=1, b=0, a=1)
+            )
+        msg.header.stamp = t
+        msg.header.frame_id = 'robot_base'
+        return t, MessageContainer(msg)
+        
     
 class MyoEmgGenerator(CsvDataGenerator):
     topic = '/myo_emg'
@@ -120,7 +156,7 @@ class GoalProbabilityGenerator(CsvDataGenerator):
         
         with open(os.path.join(base_dir, SubDirs.TEXT_DIR, 'morsel.yaml'), 'rb') as f:
             morsels = yaml.load(f)
-        self.morsel_names = [ k.encode('ascii') for k in morsels.keys() ]
+        self.morsel_names = [ k for k in morsels.keys() if k.startswith('morsel') ]
     
     def build_message(self, vals):
         t = rospy.Time.from_sec(float(vals['timestamp']))
@@ -171,7 +207,8 @@ DATA_GENERATORS = {
         'joystick': JoystickDataGenerator,
         'joint': JointInfoGenerator,
         'myo_emg': MyoEmgGenerator,
-        'goal_probabilities': GoalProbabilityGenerator
+        'goal_probabilities': GoalProbabilityGenerator,
+        'robot_skeleton': RobotSkeletonGenerator
     }
 
 def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()): 
@@ -254,13 +291,15 @@ def main():
     parser.add_argument('export_dir')
     parser.add_argument('--hz', default=10, type=float)
     parser.add_argument('--components', nargs='+', default=DATA_GENERATORS.keys(), help='Which components to use ({})'.format(DATA_GENERATORS.keys()))
+    parser.add_argument('--disable-videos', default=False, action='store_true', help='Disable video generation')
     args = parser.parse_args()
     
     for base_dir, dirs, _ in os.walk(args.export_dir):
         if SubDirs.TEXT_DIR in dirs:
             make_dir(os.path.join(base_dir, SubDirs.PROC_DIR, 'playback'))
             build_bag(base_dir, hz=args.hz, keys=args.components)
-            process_videos(base_dir, hz=args.hz)
+            if not args.disable_videos:
+                process_videos(base_dir, hz=args.hz)
             
 if __name__ == "__main__":
     main()
