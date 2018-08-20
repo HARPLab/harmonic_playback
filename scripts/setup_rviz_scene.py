@@ -14,7 +14,7 @@ from matplotlib import cm
 project_name = 'harmonic_playback'
 logger = logging.getLogger(project_name)
 
-URDF_PATH = 'package://harmonic_playback/data/mico_with_tool.urdf'
+URDF_PATH = 'package://harmonic_playback/data/mico.urdf'
 SRDF_PATH = 'package://harmonic_playback/data/mico.srdf'
 
 class JointStateClient(object):
@@ -129,57 +129,55 @@ def setup(sim=False, viewer=None, debug=False):
     logger.info('Setting Initial Robot Configuration to Serving')
     #    robot.SetDOFValues(startConfig)
 
-#     logger.info('Initial Config Set')
-#     # Load the fork into the robot's hand
-#     tool = env.ReadKinBodyURI('objects/kinova_tool.kinbody.xml')
-#     env.Add(tool)
-#     
-#     # Fork in end-effector
-#     #ee_in_world = robot.GetLink('j2n6a300_link_6').GetTransform()
-# #    tool_in_ee = numpy.array([[ -1., 0.,  0., 0.],
-# #                              [ 0.,  1., 0., -0.002],
-# #                              [ 0.,  0.,  -1., -0.118],
-# #                              [ 0.,  0.,  0., 1.]])
-# 
-# 
-#     ee_in_world = robot.arm.GetEndEffectorTransform()
-#     if right_handed:
-#         y_trans_tool = 0.004
-#     else:
-#         y_trans_tool = -0.004
-#     tool_in_ee = numpy.array([[ 1., 0.,  0., 0.],
-#                             [ 0.,  1., 0., y_trans_tool],
-#                             [ 0.,  0.,  1., -0.042],
-#                             [ 0.,  0.,  0., 1.]])
-#     rotate_tool_in_ee = rodrigues([0., 0., 0.])
-#     rotate_tool_in_ee = rodrigues([0., 0., numpy.pi/32.])
-#     #rotate_tool_in_ee = rodrigues([0., 0., -np.pi/32.])
-#     tool_in_ee[0:3, 0:3] = numpy.dot(rotate_tool_in_ee, tool_in_ee[0:3, 0:3])
-# 
-#     tool_in_world = numpy.dot(ee_in_world, tool_in_ee)
-#     tool.SetTransform(tool_in_world)
-#     
-#     fork = env.ReadKinBodyURI('objects/fork.kinbody.xml')
-#     env.Add(fork)
-#     fork_in_hole = numpy.array([[1.,0.,0.,0.],
-#                                 [0.,1.,0.,0.],
-#                                 [0.,0.,1.,-0.03],
-#                                 [0.,0.,0.,1.]])
-#     hole_in_tool = numpy.array([[0.,0.,1.,0.],
-#                                 [0.,1.,0.,-0.0225],
-#                                 [-1.,0.,0.,0.0408],
-#                                 [0.,0.,0.,1.]])
-#     fork_in_tool = numpy.dot(hole_in_tool, fork_in_hole)                           
-#     fork_in_ee = numpy.dot(tool_in_ee, fork_in_tool)
-#     fork_in_world = numpy.dot(ee_in_world, fork_in_ee)
-#     fork.SetTransform(fork_in_world)
+    logger.info('Initial Config Set')
+    # Load the fork into the robot's hand
+    tool = env.ReadKinBodyURI('objects/kinova_tool.kinbody.xml')
+    env.Add(tool)
+     
+     # Fork in end-effector
+     #ee_in_world = robot.GetLink('j2n6a300_link_6').GetTransform()
+    tool_in_ee = numpy.array([[ -1., 0.,  0., 0.],
+                             [ 0.,  1., 0., -0.002],
+                             [ 0.,  0.,  -1., -0.118],
+                             [ 0.,  0.,  0., 1.]])
 
-#     logger.info('creating fork and tool boxes')
 
-#    fork_box = make_collision_box_body(fork, add_to_pos=np.array([0.0, 0.0, 0.05]), add_to_extents=np.array([0.02, 0.02, 0.1]))
-#    tool_box = make_collision_box_body(tool, add_to_pos=np.array([0.0, 0.0, 0.04]), add_to_extents=np.array([0.055, 0.055, 0.055]))
+    ee_in_world = robot.arm.GetEndEffectorTransform()
+    if right_handed:
+        y_trans_tool = 0.004
+    else:
+        y_trans_tool = -0.004
+    tool_in_ee = numpy.array([[ 1., 0.,  0., 0.],
+                            [ 0.,  1., 0., y_trans_tool],
+                            [ 0.,  0.,  1., -0.042],
+                            [ 0.,  0.,  0., 1.]])
+    rotate_tool_in_ee = rodrigues([0., 0., 0.])
+    rotate_tool_in_ee = rodrigues([0., 0., numpy.pi/32.])
+    #rotate_tool_in_ee = rodrigues([0., 0., -np.pi/32.])
+    tool_in_ee[0:3, 0:3] = numpy.dot(rotate_tool_in_ee, tool_in_ee[0:3, 0:3])
 
-#     logger.info('fork and tool boxes created')
+    tool_in_world = numpy.dot(ee_in_world, tool_in_ee)
+    tool.SetTransform(tool_in_world)
+    
+    fork = env.ReadKinBodyURI('objects/fork.kinbody.xml')
+    env.Add(fork)
+    fork_in_hole = numpy.array([[1.,0.,0.,0.],
+                                [0.,1.,0.,0.],
+                                [0.,0.,1.,-0.03],
+                                [0.,0.,0.,1.]])
+    hole_in_tool = numpy.array([[0.,0.,1.,0.],
+                                [0.,1.,0.,-0.0225],
+                                [-1.,0.,0.,0.0408],
+                                [0.,0.,0.,1.]])
+    fork_in_tool = numpy.dot(hole_in_tool, fork_in_hole)                           
+    fork_in_ee = numpy.dot(tool_in_ee, fork_in_tool)
+    fork_in_world = numpy.dot(ee_in_world, fork_in_ee)
+    fork.SetTransform(fork_in_world)
+    logger.info('creating fork and tool boxes')
+    # fork_box = make_collision_box_body(fork, add_to_pos=np.array([0.0, 0.0, 0.05]), add_to_extents=np.array([0.02, 0.02, 0.1]))
+    # tool_box = make_collision_box_body(tool, add_to_pos=np.array([0.0, 0.0, 0.04]), add_to_extents=np.array([0.055, 0.055, 0.055]))
+
+    # logger.info('fork and tool boxes created')
 
     
     #find all finger links
