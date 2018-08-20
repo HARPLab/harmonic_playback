@@ -51,7 +51,7 @@ class ImageQueue:
                     if rospy.is_shutdown() or self._is_finished:
                         break
                     try:
-                        self._queue.put(item, block=True, timeout=1.)
+                        self._queue.put(item, block=True, timeout=0.05)
                         placed = True
                     except Queue.Full:
                         pass
