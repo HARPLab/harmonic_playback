@@ -12,11 +12,13 @@ import rosbag
 import rospy
 
 import geometry_msgs.msg
-import harmonic_playback.msg
 import ros_myo.msg
 import sensor_msgs.msg
 import std_msgs.msg
 import visualization_msgs.msg
+import ibmmpy.msg
+
+import contextlib
 
 class SubDirs:
     GAZE_DIR = 'gaze'
@@ -43,29 +45,80 @@ class MessageContainer():
         self.msg = msg
 
 class CsvDataGenerator:
-    def __init__(self, filename):
+    def __init__(self, filename, ts):
         self.filename = filename
         self._seq = 0
+        self._ts = ts
     
     def __iter__(self):
         with open(self.filename, 'rb') as f:
             reader = csv.DictReader(f)
-            for vals in reader:
-                t, msg = self.build_message(vals)
-                if hasattr(msg.msg, 'header'):
-                    msg.msg.header.seq = self._seq
-                    self._seq += 1
-                yield t, msg
+            
+            try:
+                for next_t in self._ts:
+                    for vals in reader:
+                        t, msg = self.build_message(vals)
+                        if t.to_sec() >= next_t:
+                            if hasattr(msg.msg, 'header'):
+                                msg.msg.header.seq = self._seq
+                                self._seq += 1
+                            yield t, msg
+                            break
+            except StopIteration: # out of time steps
+                pass
+                        
     
     def build_message(self, vals):
         raise NotImplementedError()
-        
+  
 
+class MultiCsvDataGenerator:
+    def __init__(self, filenames, ts):
+        self.filenames = filenames
+        self._each_seq = [0] * len(self.filenames)
+        self._seq = 0
+        self._ts = ts
+    
+    def __iter__(self):
+        with contextlib.nested(*(open(f, 'rb') for f in self.filenames)) as files:
+            # can only use "nested" for this until python3.3 :(
+            # see https://docs.python.org/2.7/library/contextlib.html#contextlib.ExitStack
+            # for 3.3, use contextlib.ExitStack
+            readers = [csv.DictReader(f) for f in files]
+            iters = [iter(r) for r in readers]
+            cache = [ [] for _ in readers ]
+            next_cache = [ [] for _ in readers ]
+            
+            for next_t in self._ts:
+                for i_reader, reader_it in enumerate(iters):
+                    for vals in reader_it:
+                        t, msg = self.build_message(vals, i_reader)
+                        if hasattr(msg, 'header'):
+                            msg.header.seq = self._each_seq[i_reader]
+                            self._each_seq[i_reader] += 1
+                        if t.to_sec() < next_t:
+                            cache[i_reader].append((t, msg))
+                        else:
+                            next_cache[i_reader].append((t, msg)) # catch the past-the-end message
+                            break
+                merged_t, merged_msg = self.combine_messages(cache)
+                if hasattr(merged_msg.msg, 'header'):
+                    merged_msg.msg.header.seq = self._seq
+                    merged_msg.msg.header.stamp = rospy.Time.from_sec(next_t)
+                    self._seq += 1
+                yield merged_t, merged_msg
+                cache = next_cache
+                next_cache = [ [] for _ in readers ]
+                
+    
+    def build_message(self, vals, idx):
+        raise NotImplementedError()
+    
 class JoystickDataGenerator(CsvDataGenerator):
     topic = '/joystick'
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, *args):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'ada_joy.csv')
-        CsvDataGenerator.__init__(self, filename)
+        CsvDataGenerator.__init__(self, filename, *args)
     
     def build_message(self, vals):
         t = rospy.Time.from_sec(float(vals['timestamp']))
@@ -81,9 +134,9 @@ class JointInfoGenerator(CsvDataGenerator):
     _JOINT_NAMES = ['mico_joint_1', 'mico_joint_2', 'mico_joint_3', 'mico_joint_4', 
                     'mico_joint_5', 'mico_joint_6', 'mico_joint_finger_1',
                     'mico_joint_finger_2']
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, *args):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'joint_positions.csv')
-        CsvDataGenerator.__init__(self, filename)
+        CsvDataGenerator.__init__(self, filename, *args)
         
     def build_message(self, vals):
         t = rospy.Time.from_sec(float(vals['timestamp']))
@@ -107,9 +160,9 @@ class RobotSkeletonGenerator(CsvDataGenerator):
                     'mico_link_4', 'mico_link_5', 'mico_link_hand',
                     'mico_end_effector', 'mico_fork_tip']
     
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, *args):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'robot_position.csv')
-        CsvDataGenerator.__init__(self, filename)
+        CsvDataGenerator.__init__(self, filename, *args)
         
     def build_message(self, vals):
         t = rospy.Time.from_sec(float(vals['timestamp']))
@@ -135,9 +188,9 @@ class RobotSkeletonGenerator(CsvDataGenerator):
 class MyoEmgGenerator(CsvDataGenerator):
     topic = '/myo_emg'
     
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, *args):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'myo_emg.csv')
-        CsvDataGenerator.__init__(self, filename)
+        CsvDataGenerator.__init__(self, filename, *args)
         
     def build_message(self, vals):
         t = rospy.Time.from_sec(float(vals['timestamp']))
@@ -146,69 +199,76 @@ class MyoEmgGenerator(CsvDataGenerator):
             moving = bool(vals['moving'])
             )
         return t, MessageContainer(msg)
-    
+
+
+harmonic_playback = None
 class GoalProbabilityGenerator(CsvDataGenerator):
     topic = '/probabilities'
     
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, *args):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'assistance_info.csv')
-        CsvDataGenerator.__init__(self, filename)
+        CsvDataGenerator.__init__(self, filename, *args)
         
         with open(os.path.join(base_dir, SubDirs.TEXT_DIR, 'morsel.yaml'), 'rb') as f:
             morsels = yaml.load(f)
         self.morsel_names = [ k for k in morsels.keys() if k.startswith('morsel') ]
     
     def build_message(self, vals):
+        global harmonic_playback
+        if harmonic_playback is None:
+            import harmonic_playback.msg
         t = rospy.Time.from_sec(float(vals['timestamp']))
         msg = harmonic_playback.msg.ProbabilityUpdate(
             names = self.morsel_names,
             probabilities = [ float(vals['p_goal_{}'.format(i)]) for i in range(len(self.morsel_names)) ]
             )
         return t, MessageContainer(msg)
-    
-    
-# class VideoDataGenerator:
-#     def __init__(self, vid_name, ts_name):
-#         self.vid_name = vid_name
-#         self.ts = np.load(ts_name)
-#         
-#     class ImageMessageContainer:
-#         def __init__(self, bridge, reader):
-#             self._bridge = bridge
-#             self._reader = reader
-#         
-#         @property
-#         def msg(self):
-#             _, img = self._reader.retrieve()
-#             return self._bridge.cv2_to_imgmsg(img, encoding='bgr8')
-#     
-#     def __iter__(self):
-#         video_reader = cv2.VideoCapture(self.vid_name)
-#         bridge = cv_bridge.CvBridge()
-#         for t in self.ts:
-#             ret = video_reader.grab()
-#             if not ret:
-#                 return
-#             t = rospy.Time.from_sec(t)
-#             yield t, VideoDataGenerator.ImageMessageContainer(bridge, video_reader)
-#         self.video_reader.release()
-    
 
-# class EgoVideoDataGenerator(VideoDataGenerator):
-#     topic = '/ego_video'
-#     def __init__(self, base_dir):
-#         vid_name = os.path.join(base_dir, build_data_stats.SubDirs.VID_DIR, 'world.mp4')
-#         ts_name = os.path.join(base_dir, build_data_stats.SubDirs.VID_DIR, 'world_timestamps.npy')
-#         VideoDataGenerator.__init__(self, vid_name, ts_name)
+class GazeDataGenerator(MultiCsvDataGenerator):
+    topic = '/gaze'
+    def __init__(self, base_dir, *args):
+        filenames = [os.path.join(base_dir, SubDirs.TEXT_DIR, 'gaze_positions.csv'),
+                     os.path.join(base_dir, SubDirs.TEXT_DIR, 'pupil_eye0.csv'),
+                     os.path.join(base_dir, SubDirs.TEXT_DIR, 'pupil_eye1.csv')]
         
-
+        GazeDataGenerator.__selectors = [GazeDataGenerator.select_world, GazeDataGenerator.select_eye, GazeDataGenerator.select_eye]
+        MultiCsvDataGenerator.__init__(self, filenames, *args)
+    
+    @staticmethod
+    def select_world(vals):
+        return (float(vals['norm_pos_x']), float(vals['norm_pos_y']), np.nan)
+    
+    @staticmethod
+    def select_eye(vals):
+        return (float(vals['circle_3d_normal_x']), float(vals['circle_3d_normal_y']), float(vals['circle_3d_normal_z']))
+        
+    def build_message(self, vals, idx):
+        msg = ibmmpy.msg.GazeDataPoint(
+                confidence=float(vals['confidence']),
+                position=geometry_msgs.msg.Point(*GazeDataGenerator.__selectors[idx](vals)))
+        t = rospy.Time.from_sec(float(vals['timestamp']))
+        msg.header.stamp = t
+        return t, msg
+    
+    def combine_messages(self, msgs):
+        t = np.max([[m[0] for ms in msgs for m in ms]])
+        container = MessageContainer(
+            ibmmpy.msg.GazeData(
+                    world_data=[x[1] for x in msgs[0]],
+                    eye0_data=[x[1] for x in msgs[1]],
+                    eye1_data=[x[1] for x in msgs[2]]
+                )
+            )
+        return t, container
+        
 
 DATA_GENERATORS = {
         'joystick': JoystickDataGenerator,
         'joint': JointInfoGenerator,
         'myo_emg': MyoEmgGenerator,
         'goal_probabilities': GoalProbabilityGenerator,
-        'robot_skeleton': RobotSkeletonGenerator
+        'robot_skeleton': RobotSkeletonGenerator,
+        'gaze': GazeDataGenerator
     }
 
 def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()): 
@@ -217,8 +277,11 @@ def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()):
         d = yaml.load(f)
         run_stats = { r[0]: r[1] for r in d }
     
-    sample_ts = np.arange(float(run_stats['start_time']), float(run_stats['end_time']), 1./hz)
-    
+    if hz is not None:
+        sample_ts = np.arange(float(run_stats['start_time']), float(run_stats['end_time']), 1./hz)
+    else:
+        sample_ts = None
+        
     print('Directory: {}'.format(base_dir))
     bag_file = os.path.join(base_dir, SubDirs.PROC_DIR, 'playback/viz_data.bag')
     with rosbag.Bag(bag_file, 'w') as bag:
@@ -227,13 +290,9 @@ def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()):
             data_generator = DATA_GENERATORS[key]
             try:
                 with progressbar.ProgressBar(max_value=sample_ts[-1]-sample_ts[0]) as bar:
-                    iter_t = iter(sample_ts)
-                    next_t = next(iter_t)
-                    for t, msg in data_generator(base_dir):
-                        if t.to_sec() >= next_t:
-                            bag.write(data_generator.topic, msg.msg, t=t)
-                            next_t = next(iter_t)
-                            bar.update(next_t-sample_ts[0])
+                    for t, msg in data_generator(base_dir, sample_ts):
+                        bag.write(data_generator.topic, msg.msg, t=t)
+                        bar.update(min(max(t.to_sec()-sample_ts[0], 0), sample_ts[-1]-sample_ts[0]))
             except StopIteration:
                 pass
             
