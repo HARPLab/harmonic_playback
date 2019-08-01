@@ -4,10 +4,12 @@ import cv2
 import Queue
 import threading
 import numpy as np
+import os
 
 import rospy
 import sensor_msgs.msg
 import cv_bridge
+import camera_info_manager
 
 import rosgraph_msgs.msg
 
@@ -102,6 +104,9 @@ def publish_image():
     rospy.init_node('image_publisher')
     provider = rospy.get_param('~video_stream_provider')
     cap = cv2.VideoCapture(provider)
+    if not cap.isOpened():
+        rospy.logerr('Failed to open video stream: {}'.format(provider))
+        return
     
     flip_horz = rospy.get_param('~flip_horizontal', default=False)
     flip_vert = rospy.get_param('~flip_vertical', default=False)
@@ -116,13 +121,18 @@ def publish_image():
     
     queue_size = rospy.get_param('~queue_size', default=10)
     ts = np.load(rospy.get_param('~ts_file'))
-    queue = ImageQueue(cap, ts, queue_size, flip_code)
+    try:
+        queue = ImageQueue(cap, ts, queue_size, flip_code)
+    except IOError as e:
+        rospy.logerr('Failed to initialize queue: {}'.format(e))
+        return
     
-    topic = rospy.get_param('~camera_name')
-    pub = rospy.Publisher(topic + '/image_raw', sensor_msgs.msg.Image, queue_size=1)
+    camera_name = rospy.get_param('~camera_name')
+    pub = rospy.Publisher(camera_name + '/image_raw', sensor_msgs.msg.Image, queue_size=1)
     
     bridge = cv_bridge.CvBridge()
     
+    # Set up time information: either drawn directly from the /clock topic or offset from the current time
     use_manual_sim = rospy.get_param('~use_manual_sim', default=False)
     offset_from_start = rospy.get_param('~offset_from_start', default=False)
     if use_manual_sim:
@@ -134,7 +144,19 @@ def publish_image():
     else:
         get_time = rospy.get_rostime
         
+    # Set up the camera calibration info
+    camera_info_url = rospy.get_param('~camera_info_url', default='')
+    camera_manager = camera_info_manager.CameraInfoManager(camera_name, camera_info_url)
+    camera_manager.loadCameraInfo()
+    
+    # set up a camera_info publisher manually because image_transport doesn't exist in python :(
+    camera_info_pub = rospy.Publisher(camera_name + '/camera_info', sensor_msgs.msg.CameraInfo, queue_size=1)
+    
     while not rospy.is_shutdown() and not queue.is_finished:
+        
+        if camera_info_pub.get_num_connections() > 0:
+            camera_info_pub.publish(camera_manager.getCameraInfo())
+        
         try:
             t, img_raw = queue.get(block=True, timeout=1.)
             tm = rospy.Time.from_sec(t)
@@ -146,7 +168,7 @@ def publish_image():
             
             img = bridge.cv2_to_imgmsg(img_raw, encoding="bgr8")
             img.header.stamp = tm
-            img.header.frame_id = topic
+            img.header.frame_id = camera_name
             
             if use_manual_sim:
                 done = False
