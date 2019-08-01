@@ -12,11 +12,11 @@ import rosbag
 import rospy
 
 import geometry_msgs.msg
-import ros_myo.msg
 import sensor_msgs.msg
 import std_msgs.msg
 import visualization_msgs.msg
 import ibmmpy.msg
+import tf2_msgs.msg
 
 import contextlib
 
@@ -184,7 +184,8 @@ class RobotSkeletonGenerator(CsvDataGenerator):
         msg.header.frame_id = 'robot_base'
         return t, MessageContainer(msg)
         
-    
+
+ros_myo = None
 class MyoEmgGenerator(CsvDataGenerator):
     topic = '/myo_emg'
     
@@ -193,6 +194,9 @@ class MyoEmgGenerator(CsvDataGenerator):
         CsvDataGenerator.__init__(self, filename, *args)
         
     def build_message(self, vals):
+        global ros_myo
+        if not ros_myo:
+            import ros_myo.msg
         t = rospy.Time.from_sec(float(vals['timestamp']))
         msg = ros_myo.msg.EmgArray(
             data = [float(vals['emg{}'.format(n)]) for n in range(8)],
@@ -223,6 +227,28 @@ class GoalProbabilityGenerator(CsvDataGenerator):
             probabilities = [ float(vals['p_goal_{}'.format(i)]) for i in range(len(self.morsel_names)) ]
             )
         return t, MessageContainer(msg)
+
+class EgoTransformGenerator(CsvDataGenerator):
+    topic = '/tf'
+    
+    def __init__(self, base_dir, *args):
+        filename = os.path.join(base_dir, SubDirs.PROC_DIR, 'world_camera_pose.csv')
+        CsvDataGenerator.__init__(self, filename, *args)
+    def build_message(self, vals):
+        t = rospy.Time.from_sec(float(vals['timestamp']))
+        tf = geometry_msgs.msg.TransformStamped()
+        tf.header.stamp = t
+        tf.header.frame_id = 'mico_link_base'
+        tf.child_frame_id = 'pupil_world'
+        tf.transform.translation.x = float(vals['x'])
+        tf.transform.translation.y = float(vals['y'])
+        tf.transform.translation.z = float(vals['z'])
+        tf.transform.rotation.x = float(vals['qx'])
+        tf.transform.rotation.y = float(vals['qy'])
+        tf.transform.rotation.z = float(vals['qz'])
+        tf.transform.rotation.w = float(vals['qw'])
+        
+        return t, MessageContainer(tf2_msgs.msg.TFMessage([tf]))
 
 class GazeDataGenerator(MultiCsvDataGenerator):
     topic = '/gaze'
@@ -268,6 +294,7 @@ DATA_GENERATORS = {
         'myo_emg': MyoEmgGenerator,
         'goal_probabilities': GoalProbabilityGenerator,
         'robot_skeleton': RobotSkeletonGenerator,
+        'ego_pose': EgoTransformGenerator,
         'gaze': GazeDataGenerator
     }
 
