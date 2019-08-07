@@ -17,8 +17,10 @@ import std_msgs.msg
 import visualization_msgs.msg
 import ibmmpy.msg
 import tf2_msgs.msg
+import tf.transformations as tf
 
 import contextlib
+from tf2_geometry_msgs.tf2_geometry_msgs import from_msg_msg
 
 class SubDirs:
     GAZE_DIR = 'gaze'
@@ -236,19 +238,20 @@ class EgoTransformGenerator(CsvDataGenerator):
         CsvDataGenerator.__init__(self, filename, *args)
     def build_message(self, vals):
         t = rospy.Time.from_sec(float(vals['timestamp']))
-        tf = geometry_msgs.msg.TransformStamped()
-        tf.header.stamp = t
-        tf.header.frame_id = 'mico_link_base'
-        tf.child_frame_id = 'pupil_world'
-        tf.transform.translation.x = float(vals['x'])
-        tf.transform.translation.y = float(vals['y'])
-        tf.transform.translation.z = float(vals['z'])
-        tf.transform.rotation.x = float(vals['qx'])
-        tf.transform.rotation.y = float(vals['qy'])
-        tf.transform.rotation.z = float(vals['qz'])
-        tf.transform.rotation.w = float(vals['qw'])
+        tf_msg = geometry_msgs.msg.TransformStamped()
+        tf_msg.header.stamp = t
+        tf_msg.header.frame_id = 'mico_link_base'
+        tf_msg.child_frame_id = 'pupil_world'
         
-        return t, MessageContainer(tf2_msgs.msg.TFMessage([tf]))
+        # build up a transform so we can invert it
+        tf_mat = tf.quaternion_matrix([float(vals['qx']), float(vals['qy']), float(vals['qz']), float(vals['qw'])])
+        tf_mat[:3,3] = [float(vals['x']), float(vals['y']), float(vals['z'])]
+        tf_mat_inv = np.linalg.inv(tf_mat)
+        
+        tf_msg.transform.translation = geometry_msgs.msg.Vector3(*tf_mat_inv[:3,3])
+        tf_msg.transform.rotation = geometry_msgs.msg.Quaternion(*tf.quaternion_from_matrix(tf_mat_inv))
+        
+        return t, MessageContainer(tf2_msgs.msg.TFMessage([tf_msg]))
 
 class GazeDataGenerator(MultiCsvDataGenerator):
     topic = '/gaze'
@@ -376,7 +379,7 @@ def main():
     parser = argparse.ArgumentParser('Build playback bag file')
     parser.add_argument('export_dir')
     parser.add_argument('--hz', default=10, type=float)
-    parser.add_argument('--components', nargs='+', default=DATA_GENERATORS.keys(), help='Which components to use ({})'.format(DATA_GENERATORS.keys()))
+    parser.add_argument('--components', nargs='+', default=DATA_GENERATORS.keys(), choices=DATA_GENERATORS.keys(), help='Which components to use')
     parser.add_argument('--disable-videos', default=False, action='store_true', help='Disable video generation')
     args = parser.parse_args()
     
