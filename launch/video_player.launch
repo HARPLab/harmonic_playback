@@ -5,7 +5,12 @@
   <arg name="enable_eye_video1" default="true" />
   <arg name="enable_zed_left" default="true" />
   <arg name="enable_zed_right" default="true" />
+  <arg name="use_processed_video" default="true" />
   
+  <arg name="videos_dir" default="$(arg data_directory)/processed/playback" if="$(arg use_processed_video)" />
+  <arg name="videos_dir" default="$(arg data_directory)/videos" unless="$(arg use_processed_video)" />
+  
+    
   <arg name="ego_video_topic" default="ego_video" />
   <arg name="eye_video0_topic" default="eye0" />
   <arg name="eye_video1_topic" default="eye1" />
@@ -14,9 +19,11 @@
   
     <node name="ego_video" pkg="harmonic_playback" type="time_synch_video_player.py" output="screen" if="$(arg enable_ego_video)">
         <param name="camera_name" value="$(arg ego_video_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/world.mp4" />
-        <param name="ts_file" value="$(arg data_directory)/processed/playback/world_timestamps.npy" />
+        <param name="video_stream_provider" value="$(arg videos_dir)/world.avi" />
+        <param name="ts_file" value="$(arg videos_dir)/world_timestamps.npy" />
         <param name="queue_size" value="10" />
+        <param name="camera_info_url" value="file://$(find harplab_sensors)/config/pupil/world_fisheye.yaml" />
+        <param name="offset_from_start" value="false" />
     </node>
 
     <node name="eye_video0" pkg="harmonic_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video0)">

@@ -3,4 +3,6 @@
 .settings/*
 data/*
 *.pyc
+.DS_STORE
+.autotools
 
