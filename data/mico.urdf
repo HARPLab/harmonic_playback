@@ -552,6 +552,15 @@
     <origin rpy="0 3.14159265359 0" xyz="0 0 -0.1687"/>
   </joint>
   <link name="mico_end_effector"/>
+
+  <!-- Fork tip when available -->
+  <joint name="mico_end_effector_to_fork_tip" type="fixed">
+    <parent link="mico_end_effector" />
+    <child link="mico_fork_tip" />
+    <origin rpy="-0.09817476977 1.57079632679 0" xyz="-0.2765016 -0.02133217 -0.0012" />
+  </joint>
+  <link name="mico_fork_tip" />
+
   <!-- Used to fix the model to the ground in Gazebo. -->
   <link name="world"/>
   <joint name="world_2_base_fixed" type="fixed">
