@@ -319,14 +319,14 @@ def generate_morsel_tfs(base_dir):
             tf_mat = np.array(transform)
             trans = tf.translation_from_matrix(tf_mat)
             quat = tf.quaternion_from_matrix(tf_mat)
-            launch_file.write('    <node pkg="tf2_ros" type="static_transform_publisher" name="{morsel}_tf_pub" args="{x} {y} {z} {qx} {qy} {qz} {qw} {morsel} mico_link_base" />\n'.format(
+            launch_file.write('    <node pkg="tf2_ros" type="static_transform_publisher" name="{morsel}_tf_pub" args="{x} {y} {z} {qx} {qy} {qz} {qw} mico_link_base {morsel}" />\n'.format(
                 morsel=morsel, x=trans[0], y=trans[1], z=trans[2], qx=quat[0], qy=quat[1], qz=quat[2], qw=quat[3]
                 ))
         launch_file.write('</launch>\n')
         
     
 
-def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()): 
+def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys(), output_file=None): 
     run_stats_file = os.path.join(base_dir, SubDirs.STATS_DIR, 'run_info.yaml')
     with open(run_stats_file, 'rb') as f:
         d = yaml.load(f)
@@ -341,7 +341,7 @@ def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()):
     if MORSEL_COMPONENT in keys:
         generate_morsel_tfs(base_dir)
         keys.remove(MORSEL_COMPONENT)
-    bag_file = os.path.join(base_dir, SubDirs.PROC_DIR, 'playback/viz_data.bag')
+    bag_file = output_file or os.path.join(base_dir, SubDirs.PROC_DIR, 'playback/viz_data.bag')
     with rosbag.Bag(bag_file, 'w') as bag:
         for key in keys:
             print('\t{}:'.format(key))
