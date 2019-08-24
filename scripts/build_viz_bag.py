@@ -300,6 +300,31 @@ DATA_GENERATORS = {
         'ego_pose': EgoTransformGenerator,
         'gaze': GazeDataGenerator
     }
+MORSEL_COMPONENT = 'morsel_tfs'
+ALL_COMPONENTS = DATA_GENERATORS.keys()
+ALL_COMPONENTS.extend([
+    MORSEL_COMPONENT
+    ])
+
+
+def generate_morsel_tfs(base_dir):
+    with open(os.path.join(base_dir, SubDirs.TEXT_DIR, 'morsel.yaml'), 'r') as f:
+        morsel_data = yaml.load(f)
+        
+    morsel_data = {k: v for k, v in morsel_data.iteritems() if k.startswith('morsel') and v is not None}
+    
+    with open(os.path.join(base_dir, SubDirs.PROC_DIR, 'playback', 'morsel_transforms.launch'), 'w') as launch_file:
+        launch_file.write('<launch>\n')
+        for morsel, transform in morsel_data.iteritems():
+            tf_mat = np.array(transform)
+            trans = tf.translation_from_matrix(tf_mat)
+            quat = tf.quaternion_from_matrix(tf_mat)
+            launch_file.write('    <node pkg="tf2_ros" type="static_transform_publisher" name="{morsel}_tf_pub" args="{x} {y} {z} {qx} {qy} {qz} {qw} {morsel} mico_link_base" />\n'.format(
+                morsel=morsel, x=trans[0], y=trans[1], z=trans[2], qx=quat[0], qy=quat[1], qz=quat[2], qw=quat[3]
+                ))
+        launch_file.write('</launch>\n')
+        
+    
 
 def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()): 
     run_stats_file = os.path.join(base_dir, SubDirs.STATS_DIR, 'run_info.yaml')
@@ -313,6 +338,9 @@ def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys()):
         sample_ts = None
         
     print('Directory: {}'.format(base_dir))
+    if MORSEL_COMPONENT in keys:
+        generate_morsel_tfs(base_dir)
+        keys.remove(MORSEL_COMPONENT)
     bag_file = os.path.join(base_dir, SubDirs.PROC_DIR, 'playback/viz_data.bag')
     with rosbag.Bag(bag_file, 'w') as bag:
         for key in keys:
@@ -379,14 +407,15 @@ def main():
     parser = argparse.ArgumentParser('Build playback bag file')
     parser.add_argument('export_dir')
     parser.add_argument('--hz', default=10, type=float)
-    parser.add_argument('--components', nargs='+', default=DATA_GENERATORS.keys(), choices=DATA_GENERATORS.keys(), help='Which components to use')
+    parser.add_argument('--components', nargs='+', default=ALL_COMPONENTS, choices=ALL_COMPONENTS, help='Which components to use')
     parser.add_argument('--disable-videos', default=False, action='store_true', help='Disable video generation')
+    parser.add_argument('--output-file', default=None, help='Output file (defaults to $data_dir/processed/playback/viz_data.bag)')
     args = parser.parse_args()
     
     for base_dir, dirs, _ in os.walk(args.export_dir):
         if SubDirs.TEXT_DIR in dirs:
             make_dir(os.path.join(base_dir, SubDirs.PROC_DIR, 'playback'))
-            build_bag(base_dir, hz=args.hz, keys=args.components)
+            build_bag(base_dir, hz=args.hz, keys=args.components, output_file=args.output_file)
             if not args.disable_videos:
                 process_videos(base_dir, hz=args.hz)
             
