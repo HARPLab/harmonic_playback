@@ -248,10 +248,17 @@ class EgoTransformGenerator(CsvDataGenerator):
         tf_mat[:3,3] = [float(vals['x']), float(vals['y']), float(vals['z'])]
         tf_mat_inv = np.linalg.inv(tf_mat)
         
-        tf_msg.transform.translation = geometry_msgs.msg.Vector3(*tf_mat_inv[:3,3])
-        tf_msg.transform.rotation = geometry_msgs.msg.Quaternion(*tf.quaternion_from_matrix(tf_mat_inv))
+        tf_msg.transform.translation = geometry_msgs.msg.Vector3(*tf_mat[:3,3])
+        tf_msg.transform.rotation = geometry_msgs.msg.Quaternion(*tf.quaternion_from_matrix(tf_mat))
         
-        return t, MessageContainer(tf2_msgs.msg.TFMessage([tf_msg]))
+        tf_msg_inv = geometry_msgs.msg.TransformStamped()
+        tf_msg_inv.header.stamp = t
+        tf_msg_inv.header.frame_id = 'mico_link_base'
+        tf_msg_inv.child_frame_id = 'pupil_world_inv'
+        tf_msg_inv.transform.translation = geometry_msgs.msg.Vector3(*tf_mat_inv[:3,3])
+        tf_msg_inv.transform.rotation = geometry_msgs.msg.Quaternion(*tf.quaternion_from_matrix(tf_mat_inv))
+        
+        return t, MessageContainer(tf2_msgs.msg.TFMessage([tf_msg, tf_msg_inv]))
 
 class GazeDataGenerator(MultiCsvDataGenerator):
     topic = '/gaze'
@@ -319,7 +326,7 @@ def generate_morsel_tfs(base_dir):
             tf_mat = np.array(transform)
             trans = tf.translation_from_matrix(tf_mat)
             quat = tf.quaternion_from_matrix(tf_mat)
-            launch_file.write('    <node pkg="tf2_ros" type="static_transform_publisher" name="{morsel}_tf_pub" args="{x} {y} {z} {qx} {qy} {qz} {qw} mico_link_base {morsel}" />\n'.format(
+            launch_file.write('    <node pkg="tf2_ros" type="static_transform_publisher" name="{morsel}_tf_pub" args="{x} {y} {z} {qx} {qy} {qz} {qw} world {morsel}" />\n'.format(
                 morsel=morsel, x=trans[0], y=trans[1], z=trans[2], qx=quat[0], qy=quat[1], qz=quat[2], qw=quat[3]
                 ))
         launch_file.write('</launch>\n')
@@ -339,8 +346,12 @@ def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys(), output_file=None):
         
     print('Directory: {}'.format(base_dir))
     if MORSEL_COMPONENT in keys:
+        print('\t{}:'.format(MORSEL_COMPONENT))
         generate_morsel_tfs(base_dir)
         keys.remove(MORSEL_COMPONENT)
+    if len(keys) == 0:
+        return
+    
     bag_file = output_file or os.path.join(base_dir, SubDirs.PROC_DIR, 'playback/viz_data.bag')
     with rosbag.Bag(bag_file, 'w') as bag:
         for key in keys:

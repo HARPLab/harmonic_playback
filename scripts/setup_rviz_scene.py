@@ -190,8 +190,8 @@ def setup(sim=False, viewer=None, debug=False):
 #             grab_link = link
 # 
 #     logger.info('Grabbing tool and fork')
-#     robot.Grab(tool, grablink=grab_link, linkstoignore=finger_link_inds)
-#     robot.Grab(fork, grablink=grab_link, linkstoignore=finger_link_inds)
+    robot.Grab(tool)
+    robot.Grab(fork)
  #   robot.Grab(tool_box, grablink=grab_link, linkstoignore=finger_link_inds)
   #  robot.Grab(fork_box, grablink=grab_link, linkstoignore=finger_link_inds)
     return robot, env

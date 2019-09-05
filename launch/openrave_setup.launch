@@ -8,5 +8,8 @@
     <param name="morsel_topic" value="/probabilities" />
     <param name="joint_state_topic" value="/joint_states" />
   </node>
+  
+  <!-- dumb hack bc there appears to be no way to call set_parent_frame in python -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_world_pub" args="0 0 0 0 0 0 map world " />
 
 </launch>
