@@ -118,7 +118,7 @@ class MultiCsvDataGenerator:
     
 class JoystickDataGenerator(CsvDataGenerator):
     topic = '/joystick'
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'ada_joy.csv')
         CsvDataGenerator.__init__(self, filename, *args)
     
@@ -136,7 +136,7 @@ class JointInfoGenerator(CsvDataGenerator):
     _JOINT_NAMES = ['mico_joint_1', 'mico_joint_2', 'mico_joint_3', 'mico_joint_4', 
                     'mico_joint_5', 'mico_joint_6', 'mico_joint_finger_1',
                     'mico_joint_finger_2']
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'joint_positions.csv')
         CsvDataGenerator.__init__(self, filename, *args)
         
@@ -162,7 +162,7 @@ class RobotSkeletonGenerator(CsvDataGenerator):
                     'mico_link_4', 'mico_link_5', 'mico_link_hand',
                     'mico_end_effector', 'mico_fork_tip']
     
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'robot_position.csv')
         CsvDataGenerator.__init__(self, filename, *args)
         
@@ -191,7 +191,7 @@ ros_myo = None
 class MyoEmgGenerator(CsvDataGenerator):
     topic = '/myo_emg'
     
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'myo_emg.csv')
         CsvDataGenerator.__init__(self, filename, *args)
         
@@ -211,13 +211,13 @@ harmonic_playback = None
 class GoalProbabilityGenerator(CsvDataGenerator):
     topic = '/probabilities'
     
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'assistance_info.csv')
         CsvDataGenerator.__init__(self, filename, *args)
         
         with open(os.path.join(base_dir, SubDirs.TEXT_DIR, 'morsel.yaml'), 'rb') as f:
             morsels = yaml.load(f)
-        self.morsel_names = [ k for k in morsels.keys() if k.startswith('morsel') ]
+        self.morsel_names = [ k for k in morsels.keys() if k.startswith('morsel') and morsels[k] ]
     
     def build_message(self, vals):
         global harmonic_playback
@@ -226,14 +226,14 @@ class GoalProbabilityGenerator(CsvDataGenerator):
         t = rospy.Time.from_sec(float(vals['timestamp']))
         msg = harmonic_playback.msg.ProbabilityUpdate(
             names = self.morsel_names,
-            probabilities = [ float(vals['p_goal_{}'.format(i)]) for i in range(len(self.morsel_names)) ]
+            probabilities = [ float(vals.get('p_goal_{}'.format(i), 0.)) for i in range(len(self.morsel_names)) ]
             )
         return t, MessageContainer(msg)
 
 class EgoTransformGenerator(CsvDataGenerator):
     topic = '/tf'
     
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filename = os.path.join(base_dir, SubDirs.PROC_DIR, 'world_camera_pose.csv')
         CsvDataGenerator.__init__(self, filename, *args)
     def build_message(self, vals):
@@ -262,7 +262,7 @@ class EgoTransformGenerator(CsvDataGenerator):
 
 class GazeDataGenerator(MultiCsvDataGenerator):
     topic = '/gaze'
-    def __init__(self, base_dir, *args):
+    def __init__(self, base_dir, *args, **kwargs):
         filenames = [os.path.join(base_dir, SubDirs.TEXT_DIR, 'gaze_positions.csv'),
                      os.path.join(base_dir, SubDirs.TEXT_DIR, 'pupil_eye0.csv'),
                      os.path.join(base_dir, SubDirs.TEXT_DIR, 'pupil_eye1.csv')]
@@ -296,7 +296,97 @@ class GazeDataGenerator(MultiCsvDataGenerator):
                 )
             )
         return t, container
+
+    
+class GazeRayGenerator(CsvDataGenerator):
+    topic = '/visualization_marker_array'
+    
+    def __init__(self, base_dir, *args, **kwargs):
+        if 'camera_info' not in kwargs:
+            raise ValueError('Must specify camera info')
+        self._camera_info = kwargs['camera_info']
+        filename = os.path.join(base_dir, SubDirs.TEXT_DIR, 'gaze_positions.csv')
+        CsvDataGenerator.__init__(self, filename, *args)
         
+    def build_message(self, vals):
+        t = rospy.Time.from_sec(float(vals['timestamp']))
+        
+        # compute pose
+        norm_pos = np.array([[float(vals['norm_pos_x']), float(vals['norm_pos_y'])]])
+        uv = self._camera_info.get_uv_from_norm(norm_pos)
+        uv_rect = self._camera_info.get_uvrect_from_uv(uv)
+        xy = self._camera_info.get_xy_from_uvrect(np.atleast_2d(uv_rect))
+        arrow_vec = np.concatenate((xy.ravel(), np.array([1.])))
+        
+        
+        
+        gaze_ray_marker = visualization_msgs.msg.Marker(
+            id = 200,
+            ns = 'gaze_ray',
+            type = visualization_msgs.msg.Marker.ARROW,
+            action = visualization_msgs.msg.Marker.MODIFY,
+            pose = geometry_msgs.msg.Pose(
+                    position = geometry_msgs.msg.Point(0., 0., 0.),
+                    orientation = geometry_msgs.msg.Quaternion(0., 0., 0., 1.)
+                ),
+            scale = geometry_msgs.msg.Vector3(0.01, 0.01, 0.),
+            points = [ geometry_msgs.msg.Point(0,0,0), geometry_msgs.msg.Point(*arrow_vec.ravel().tolist())],
+            color = std_msgs.msg.ColorRGBA(r=1, g=0, b=0, a=1),
+            frame_locked = True
+            )
+        gaze_ray_marker.header.stamp = t
+        gaze_ray_marker.header.frame_id = 'pupil_world'
+        
+        head_marker = visualization_msgs.msg.Marker(
+            id = 201,
+            ns = 'head',
+            type = visualization_msgs.msg.Marker.SPHERE,
+            action = visualization_msgs.msg.Marker.MODIFY,
+            pose = geometry_msgs.msg.Pose(
+                position = geometry_msgs.msg.Point(0., 0.04, -0.062),
+                orientation = geometry_msgs.msg.Quaternion(0., 0., 0., 1.)
+                ),
+            scale = geometry_msgs.msg.Vector3(0.16, 0.2, 0.16),
+            color = std_msgs.msg.ColorRGBA(r=0, g=1, b=0, a=1),
+            frame_locked = True                                            
+            )
+        head_marker.header.stamp = t
+        head_marker.header.frame_id = 'pupil_world'
+        
+        nose_marker = visualization_msgs.msg.Marker(
+            id = 202,
+            ns = 'nose',
+            type = visualization_msgs.msg.Marker.TRIANGLE_LIST,
+            action = visualization_msgs.msg.Marker.MODIFY,
+            pose = geometry_msgs.msg.Pose(
+                position = geometry_msgs.msg.Point(0., 0., 0.01),
+                orientation = geometry_msgs.msg.Quaternion(0., 0., 0., 1.)
+                ),
+            points = [
+                # triangle 1
+                geometry_msgs.msg.Point(0., 1.,  1.),
+                geometry_msgs.msg.Point(0., 0., 0.),
+                geometry_msgs.msg.Point(1., 1., 0.),
+                # triangle 2
+                geometry_msgs.msg.Point(0., 1., 1.),
+                geometry_msgs.msg.Point(0., 0., 0.),
+                geometry_msgs.msg.Point(-1., 1., 0.),
+                # triangle 3
+                geometry_msgs.msg.Point(0., 1., 1.),
+                geometry_msgs.msg.Point(1., 1., 0.),
+                geometry_msgs.msg.Point(-1., 1., 0.)
+                ],
+            color = std_msgs.msg.ColorRGBA(r=0, g=1, b=0, a=1),
+            scale = geometry_msgs.msg.Vector3(0.03, 0.04, 0.04),
+            frame_locked = True                                            
+            )
+        nose_marker.header.stamp = t
+        nose_marker.header.frame_id = 'pupil_world'
+        
+        msg = visualization_msgs.msg.MarkerArray([gaze_ray_marker, head_marker, nose_marker])
+        
+        return t, MessageContainer(msg)
+
 
 DATA_GENERATORS = {
         'joystick': JoystickDataGenerator,
@@ -305,7 +395,8 @@ DATA_GENERATORS = {
         'goal_probabilities': GoalProbabilityGenerator,
         'robot_skeleton': RobotSkeletonGenerator,
         'ego_pose': EgoTransformGenerator,
-        'gaze': GazeDataGenerator
+        'gaze': GazeDataGenerator,
+        'gaze_ray': GazeRayGenerator
     }
 MORSEL_COMPONENT = 'morsel_tfs'
 ALL_COMPONENTS = DATA_GENERATORS.keys()
@@ -333,7 +424,7 @@ def generate_morsel_tfs(base_dir):
         
     
 
-def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys(), output_file=None): 
+def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys(), output_file=None, context={}): 
     run_stats_file = os.path.join(base_dir, SubDirs.STATS_DIR, 'run_info.yaml')
     with open(run_stats_file, 'rb') as f:
         d = yaml.load(f)
@@ -359,7 +450,7 @@ def build_bag(base_dir, hz=10, keys=DATA_GENERATORS.keys(), output_file=None):
             data_generator = DATA_GENERATORS[key]
             try:
                 with progressbar.ProgressBar(max_value=sample_ts[-1]-sample_ts[0]) as bar:
-                    for t, msg in data_generator(base_dir, sample_ts):
+                    for t, msg in data_generator(base_dir, sample_ts, **context):
                         bag.write(data_generator.topic, msg.msg, t=t)
                         bar.update(min(max(t.to_sec()-sample_ts[0], 0), sample_ts[-1]-sample_ts[0]))
             except StopIteration:
@@ -413,20 +504,62 @@ def process_videos(base_dir, hz=10):
                          out_vid=os.path.join(proc_dir, 'playback/zed_left.avi'),
                          out_ts=os.path.join(proc_dir, 'playback/zed_timestamps.npy'),
                          factor = int(30 / hz)) 
-                    
+
+#### TODO: THIS CLASS IS A HACK, MOVE THIS SOMEWHERE BETTER
+camera_calibration_parsers = None
+class CameraInfoFisheye:
+    def __init__(self, camera_info_url):
+        global camera_calibration_parsers
+        if camera_calibration_parsers is None:
+            import camera_calibration_parsers
+        self.name, cam_info = camera_calibration_parsers.readCalibration(camera_info_url)
+        self.K = np.array(cam_info.K).reshape([3,3])
+        self.Kinv = np.linalg.inv(self.K)
+        self.D = np.array(cam_info.D)
+        self.distortion_model = cam_info.distortion_model
+        self.height = cam_info.height
+        self.width = cam_info.width
+        
+    def get_xy_from_uvrect(self, uvrect):
+        return np.dot(self.Kinv, np.vstack([uvrect.T, np.ones((1, uvrect.shape[0]))]) ).T[:,0:2]
+    
+    def get_uvrect_from_uv(self, uv):
+        return np.squeeze(cv2.fisheye.undistortPoints(uv[None,:,:].astype(np.float32), self.K, self.D, np.eye(3), self.K))
+    
+    def get_uv_from_norm(self, norm):
+        return np.hstack([ norm[:,0][:,np.newaxis]*self.width, (1-norm[:,1][:,np.newaxis])*self.height ])
+    
+    def rectify_frame(self, frame):
+        map1, map2 = cv2.fisheye.initUndistortRectifyMap(
+            self.K,
+            self.D,
+            np.eye(3),
+            self.K,
+            (self.width, self.height),
+            cv2.CV_16SC2
+        )
+        return cv2.remap(frame, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+
+
+    
 def main():   
     parser = argparse.ArgumentParser('Build playback bag file')
     parser.add_argument('export_dir')
     parser.add_argument('--hz', default=10, type=float)
     parser.add_argument('--components', nargs='+', default=ALL_COMPONENTS, choices=ALL_COMPONENTS, help='Which components to use')
+    parser.add_argument('--camera-info', default=None, help="Location of camera calibration file")
     parser.add_argument('--disable-videos', default=False, action='store_true', help='Disable video generation')
     parser.add_argument('--output-file', default=None, help='Output file (defaults to $data_dir/processed/playback/viz_data.bag)')
     args = parser.parse_args()
     
+    context = {}
+    if args.camera_info is not None:
+        context['camera_info'] = CameraInfoFisheye(args.camera_info)
+    
     for base_dir, dirs, _ in os.walk(args.export_dir):
         if SubDirs.TEXT_DIR in dirs:
             make_dir(os.path.join(base_dir, SubDirs.PROC_DIR, 'playback'))
-            build_bag(base_dir, hz=args.hz, keys=args.components, output_file=args.output_file)
+            build_bag(base_dir, hz=args.hz, keys=args.components, output_file=args.output_file, context=context)
             if not args.disable_videos:
                 process_videos(base_dir, hz=args.hz)
             

@@ -282,8 +282,10 @@ if __name__ == "__main__":
     
     
     robot, env = setup()
-    if rospy.has_param('~morsel_file') and rospy.get_param('~morsel_file') != '':
-        morsel_display = MorselDisplay(env, rospy.get_param('~morsel_file'), rospy.get_param('~morsel_topic'))
+    morsel_file = rospy.get_param('~morsel_file', default='')
+    if morsel_file != '':
+        print('Using morsel file {}'.format(morsel_file))
+        morsel_display = MorselDisplay(env, morsel_file, rospy.get_param('~morsel_topic'))
     joint_client = JointStateClient(robot, rospy.get_param('~joint_state_topic'))
     
     rospy.spin()
