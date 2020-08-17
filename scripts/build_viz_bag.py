@@ -223,7 +223,7 @@ class GoalProbabilityGenerator(CsvDataGenerator):
         
         with open(os.path.join(base_dir, SubDirs.TEXT_DIR, 'morsel.yaml'), 'rb') as f:
             morsels = yaml.load(f)
-        self.morsel_names = [ k for k in morsels.keys() if k.startswith('morsel') and morsels[k] ]
+        self.morsel_names = [ k for k in morsels.keys() if k.startswith('morsel') and morsels[k] is not None and k != 'morsel_perm' ]
     
     def build_message(self, vals, start_time):
         global harmonic_playback

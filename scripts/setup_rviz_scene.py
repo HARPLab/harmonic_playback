@@ -212,7 +212,7 @@ class MorselDisplay:
         delta_path = os.path.join(object_base_path, 'objects', 'mediumsphere.kinbody.xml')
     
         for name in ['morsel0', 'morsel1', 'morsel2']:
-            if name not in morsels:
+            if name not in morsels or morsels[name] is None:
                 continue
             with env:
                 morsel = env.ReadKinBodyURI(ball_path)
@@ -223,7 +223,6 @@ class MorselDisplay:
                 env.Add(delta)
                 morsel.Enable(False)
                 delta.Enable(False)
-        
             morsel.SetTransform(morsels[name])
             delta.SetTransform(morsels[name])
             self.morsels[name] = {'morsel': morsel, 'delta': delta}
