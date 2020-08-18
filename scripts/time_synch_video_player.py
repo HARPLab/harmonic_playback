@@ -5,6 +5,7 @@ import Queue
 import threading
 import numpy as np
 import os
+import yaml
 
 import rospy
 import sensor_msgs.msg
@@ -121,6 +122,9 @@ def publish_image():
     
     queue_size = rospy.get_param('~queue_size', default=10)
     ts = np.load(rospy.get_param('~ts_file'))
+    ts += float(rospy.get_param('/trial_start_time', default=0.))
+
+
     try:
         queue = ImageQueue(cap, ts, queue_size, flip_code)
     except IOError as e:
@@ -150,6 +154,7 @@ def publish_image():
     camera_manager.loadCameraInfo()
     
     # set up a camera_info publisher manually because image_transport doesn't exist in python :(
+    # TODO: make this use SubscribeListener instead of a loop
     camera_info_pub = rospy.Publisher(camera_name + '/camera_info', sensor_msgs.msg.CameraInfo, queue_size=1)
     
     while not rospy.is_shutdown() and not queue.is_finished:
@@ -162,7 +167,7 @@ def publish_image():
             tm = rospy.Time.from_sec(t)
             cur_tm = get_time()
             if tm < cur_tm:
-#                 rospy.loginfo("Video frame time has passed already (offset={}), discarding".format( (cur_tm - tm).to_sec()))
+                rospy.logdebug("Video frame time has passed already (offset={}), discarding".format( (cur_tm - tm).to_sec()))
                 continue
 #             rospy.loginfo("got frame for time: {}".format(tm))
             

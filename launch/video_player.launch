@@ -6,6 +6,8 @@
   <arg name="enable_zed_left" default="true" />
   <arg name="enable_zed_right" default="true" />
   <arg name="use_processed_video" default="true" />
+  <arg name="video_ext" default=".mp4" />
+  <arg name="offset_from_start" default="false" />
   
   <arg name="videos_dir" default="$(arg data_directory)/processed/playback" if="$(arg use_processed_video)" />
   <arg name="videos_dir" default="$(arg data_directory)/videos" unless="$(arg use_processed_video)" />
@@ -16,36 +18,48 @@
   <arg name="eye_video1_topic" default="eye1" />
   <arg name="zed_left_topic" default="zed_left" />
   <arg name="zed_right_topic" default="zed_right" />
+
+  <!-- we need the start time since everything is indexed from 0. now -->
+  <!-- this is kind of hacky, maybe do it better someday -->
+  <!-- also disable if harmonic ver < 0.5 -->
+  <param name="/trial_start_time" command="/bin/bash -c &quot;grep -A1 'start_time' src/harmonic_playback/data/p121_017/stats/run_info.yaml | grep -Eo '[[:digit:]]+\.[[:digit:]]+'&quot;" />
   
     <node name="ego_video" pkg="harmonic_playback" type="time_synch_video_player.py" output="screen" if="$(arg enable_ego_video)">
         <param name="camera_name" value="$(arg ego_video_topic)" />
-        <param name="video_stream_provider" value="$(arg videos_dir)/world.avi" />
+        <param name="video_stream_provider" value="$(arg videos_dir)/world$(arg video_ext)" />
         <param name="ts_file" value="$(arg videos_dir)/world_timestamps.npy" />
         <param name="queue_size" value="10" />
         <param name="camera_info_url" value="file://$(find harplab_sensors)/config/pupil/world_fisheye.yaml" />
-        <param name="offset_from_start" value="false" />
+        <param name="offset_from_start" value="$(arg offset_from_start)" />
     </node>
+
+
+      <!-- set log level -->
+    <node pkg="rosservice" type="rosservice" name="set_sgl_log_level" args="call --wait /ego_video/set_logger_level 'rosout' 'debug'" />
 
     <node name="eye_video0" pkg="harmonic_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video0)">
         <param name="camera_name" value="$(arg eye_video0_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/eye0.mp4" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/eye0$(arg video_ext)" />
         <param name="ts_file" value="$(arg data_directory)/processed/playback/eye0_timestamps.npy" />
         <param name="queue_size" value="10" />
         <param name="flip_vertical" value="true" />
+        <param name="offset_from_start" value="$(arg offset_from_start)" />
     </node>
 
     <node name="eye_video1" pkg="harmonic_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video1)">
         <param name="camera_name" value="$(arg eye_video1_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/eye1.mp4" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/eye1$(arg video_ext)" />
         <param name="ts_file" value="$(arg data_directory)/processed/playback/eye1_timestamps.npy" />
         <param name="queue_size" value="10" />
+        <param name="offset_from_start" value="$(arg offset_from_start)" />
     </node>
 
     <node name="zed_left" pkg="harmonic_playback" type="time_synch_video_player.py" if="$(arg enable_zed_left)">
         <param name="camera_name" value="$(arg zed_left_topic)" />
-        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/zed_left.mp4" />
+        <param name="video_stream_provider" value="$(arg data_directory)/processed/playback/zed_left$(arg video_ext)" />
         <param name="ts_file" value="$(arg data_directory)/processed/playback/zed_timestamps.npy" />
         <param name="queue_size" value="10" />
+        <param name="offset_from_start" value="$(arg offset_from_start)" />
     </node>
   
 </launch>
