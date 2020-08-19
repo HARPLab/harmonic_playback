@@ -35,7 +35,6 @@
 
 
       <!-- set log level -->
-    <node pkg="rosservice" type="rosservice" name="set_sgl_log_level" args="call --wait /ego_video/set_logger_level 'rosout' 'debug'" />
 
     <node name="eye_video0" pkg="harmonic_playback" type="time_synch_video_player.py" if="$(arg enable_eye_video0)">
         <param name="camera_name" value="$(arg eye_video0_topic)" />
